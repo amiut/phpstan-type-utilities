@@ -38,7 +38,7 @@ Use `%currentWorkingDirectory%` for manual includes. A plain relative include ca
 Infer the exact static array shape of a function or method from its return expression.
 
 ```php
-/** @return array @phpstan-infer-return */
+/** @phpstan-return array @phpstan-infer-return */
 public function options(): array
 {
     return [
@@ -61,66 +61,60 @@ This suppresses PHPStan's generic missing iterable value type error when the sha
 
 ### `ReturnType<callable>`
 
-Detect and reuse the return type of a function or method as a PHPDoc type. `ReturnType<callable>` is a general callable utility; it works with any callable return type PHPStan can resolve. That type may come from a native declaration, PHPDoc, another PHPStan extension, or `@phpstan-infer-return`.
+Detect and reuse the return type of a function or method as a PHPDoc type. `ReturnType<callable>` works with any callable return type PHPStan can resolve — from a native declaration, PHPDoc, another PHPStan extension, or `@phpstan-infer-return`.
 
-Regular return types work without `@phpstan-infer-return`:
+The main benefit is avoiding duplicated array shape annotations. Instead of copying an `array{...}` PHPDoc in every place that consumes it, point `ReturnType` at the single method that defines it:
 
 ```php
-final class Counter
+final class PluginConfig
 {
-    public function count(): int
+    /** @return array{enabled: bool, limit: int, label: string} */
+    public function defaults(): array
     {
-        return 5;
+        return ['enabled' => true, 'limit' => 100, 'label' => 'default'];
     }
+}
 
-    /** @phpstan-param \ReturnType<self, 'count'> $count */
-    public function setCount(int $count): void
+/**
+ * @phpstan-type PluginDefaults \ReturnType<PluginConfig, 'defaults'>
+ */
+final class PluginService
+{
+    /**
+     * @param array $config
+     * @phpstan-param PluginDefaults $config
+     */
+    public function boot(array $config): void
     {
+        // PHPStan knows $config['enabled'] is bool, $config['limit'] is int, etc.
     }
 }
 ```
 
-Here `\ReturnType<self, 'count'>` resolves to:
+`PluginDefaults` resolves to:
 
 ```php
-int
+array{enabled: bool, limit: int, label: string}
 ```
 
-PHPDoc return types work too:
+When the `defaults()` signature changes, all consumers pick up the updated type automatically — without touching their own annotations.
 
-```php
-final class Config
-{
-    /** @return array{enabled: bool, limit: int} */
-    public function options(): array
-    {
-        return [
-            'enabled' => true,
-            'limit' => 100,
-        ];
-    }
+#### Combined with `@phpstan-infer-return`
 
-    /** @phpstan-param \ReturnType<self, 'options'> $options */
-    public function apply(array $options): void
-    {
-    }
-}
-```
-
-It can also reuse an inferred array shape because `@phpstan-infer-return` makes the callable's return type more precise:
+When a method uses `@phpstan-infer-return`, its return type becomes a precise static array shape, and `ReturnType<callable>` can reference it like any other documented type. This is the most common pattern: define the shape once via inference, reuse it everywhere:
 
 ```php
 /**
- * @phpstan-type Options \ReturnType<self, 'options'>
+ * @phpstan-type Options \ReturnType<self, 'defaults'>
  */
 final class Config
 {
-    /** @return array @phpstan-infer-return */
-    public function options(): array
+    /** @phpstan-return array @phpstan-infer-return */
+    public function defaults(): array
     {
         return [
             'enabled' => true,
-            'limit' => 100,
+            'limit'   => 100,
         ];
     }
 
@@ -130,36 +124,45 @@ final class Config
      */
     public function apply(array $options): void
     {
+        // PHPStan catches type errors on $options['enabled'] and $options['limit']
     }
 }
 ```
 
-Here `Options` resolves to the same inferred type as `options()`:
+`Options` resolves to the same inferred type as `defaults()`:
 
 ```php
 array{enabled: bool, limit: int}
 ```
 
-`ReturnType` always reuses the callable's literal PHP return type. For example, if a method returns a JSON-schema definition array, `\ReturnType<self, 'schema'>` resolves to the PHP shape of that schema-definition array. It does not convert the JSON schema into a separate data shape. Point `ReturnType` at the callable that returns the data shape you want, such as a `default()` method, when you need to validate assignments to that data.
-
-For functions, pass the function name:
+#### Referencing a function
 
 ```php
 /**
- * @return array @phpstan-infer-return
+ * @phpstan-return array @phpstan-infer-return
  */
-function defaultOptions(): array
+function defaultHeaders(): array
 {
     return [
-        'enabled' => true,
-        'limit' => 100,
+        'Content-Type' => 'application/json',
+        'Accept'       => 'application/json',
     ];
 }
 
-/** @phpstan-type Options \ReturnType<defaultOptions> */
+/**
+ * @phpstan-type Headers \ReturnType<App\Http\defaultHeaders>
+ */
+final class HttpClient
+{
+    /**
+     * @param array $headers
+     * @phpstan-param Headers $headers
+     */
+    public function withHeaders(array $headers): void {}
+}
 ```
 
-`ReturnType<callable>` supports:
+#### Supported syntax
 
 - `\ReturnType<functionName>`
 - `\ReturnType<Fully\Qualified\functionName>`
@@ -167,6 +170,8 @@ function defaultOptions(): array
 - `\ReturnType<Fully\Qualified\ClassName, 'methodName'>`
 
 Nested inferred calls are supported when the target is statically resolvable.
+
+`ReturnType` always reuses the callable's literal PHP return type. If a method returns a JSON-schema definition array, `\ReturnType<self, 'schema'>` resolves to the PHP shape of that schema-definition array. It does not convert the JSON schema into a separate data shape.
 
 PHPStan-powered IDE hovers should show the same resolved types PHPStan sees on the command line when the extension is active. The optional IDE stubs only reduce editor noise in tools like Intelephense or PHPStorm; those tools do not execute PHPStan's custom type resolver by themselves.
 

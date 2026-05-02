@@ -6,10 +6,10 @@ For small arrays a manual `@return array{key: type, ...}` annotation is manageab
 
 ## Usage
 
-Add `@phpstan-infer-return` on the same line as, or on the next line after, the `@return array` tag:
+Add `@phpstan-infer-return` on the same line as the `@phpstan-return array` tag:
 
 ```php
-/** @return array @phpstan-infer-return */
+/** @phpstan-return array @phpstan-infer-return */
 public function options(): array
 {
     return [
@@ -20,9 +20,11 @@ public function options(): array
 }
 ```
 
-PHPStan will infer `array{enabled: true, limit: 100, label: 'default'}` and suppress the `missingType.iterableValue` error that is raised at level 6 and above.
+PHPStan will infer `array{enabled: bool, limit: int, label: string}` and suppress the `missingType.iterableValue` error that is raised at level 6 and above.
 
-The tag is invisible to non-PHPStan language servers — editors only see `@return array` and will not show spurious type errors. PHPStan-powered IDE hovers can still show the precise inferred shape because PHPStan resolves the tag during analysis.
+The `@phpstan-return` prefix is intentional. PhpStorm treats only `@return` as an override for its own type inference; `@phpstan-return` is transparent to PhpStorm, so it falls back to inferring the shape directly from the return literal. This means PhpStorm's hover tooltip also shows the precise shape without a separate PHPStan language server.
+
+The plain `@return array @phpstan-infer-return` form is also accepted and behaves identically for PHPStan, but PhpStorm will show `array` on hover because the `@return` annotation overrides its inference.
 
 ## Functions
 
@@ -30,7 +32,7 @@ The marker works equally well on standalone functions:
 
 ```php
 /**
- * @return array @phpstan-infer-return
+ * @phpstan-return array @phpstan-infer-return
  */
 function defaultConfig(): array
 {
@@ -46,13 +48,13 @@ function defaultConfig(): array
 The return expression may call other methods or functions that are also annotated with `@phpstan-infer-return`. Their shapes are resolved recursively:
 
 ```php
-/** @return array @phpstan-infer-return */
+/** @phpstan-return array @phpstan-infer-return */
 private function baseHeaders(): array
 {
     return ['Content-Type' => 'application/json'];
 }
 
-/** @return array @phpstan-infer-return */
+/** @phpstan-return array @phpstan-infer-return */
 public function requestHeaders(): array
 {
     return [

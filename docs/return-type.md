@@ -55,7 +55,7 @@ final class Config
 ```php
 final class Config
 {
-    /** @return array @phpstan-infer-return */
+    /** @phpstan-return array @phpstan-infer-return */
     public function options(): array
     {
         return [
@@ -82,7 +82,7 @@ Additional offsets are not treated as sealed today. Assignments to known inferre
  */
 final class Config
 {
-    /** @return array @phpstan-infer-return */
+    /** @phpstan-return array @phpstan-infer-return */
     public function defaults(): array
     {
         return ['schema_version' => 1, 'groups' => []];
@@ -112,7 +112,7 @@ final class Config
  */
 final class Structure
 {
-    /** @return array @phpstan-infer-return */
+    /** @phpstan-return array @phpstan-infer-return */
     public function schema(): array
     {
         return [
@@ -137,7 +137,7 @@ Repeating `\ReturnType<self, 'options'>` everywhere is verbose. Define it once a
  */
 final class Config
 {
-    /** @return array @phpstan-infer-return */
+    /** @phpstan-return array @phpstan-infer-return */
     public function options(): array
     {
         return ['enabled' => true, 'limit' => 100];
@@ -174,7 +174,7 @@ final class ProductService
 
 ```php
 /**
- * @return array @phpstan-infer-return
+ * @phpstan-return array @phpstan-infer-return
  */
 function defaultHeaders(): array
 {
