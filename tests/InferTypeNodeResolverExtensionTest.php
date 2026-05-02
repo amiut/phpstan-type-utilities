@@ -34,7 +34,7 @@ final class InferTypeNodeResolverExtensionTest extends PHPStanTestCase
             new IdentifierTypeNode('ReturnType'),
             [
                 new IdentifierTypeNode(InferFixture::class),
-                new IdentifierTypeNode("'schema'"),
+                new IdentifierTypeNode("'options'"),
             ]
         );
 
@@ -45,8 +45,8 @@ final class InferTypeNodeResolverExtensionTest extends PHPStanTestCase
             static function ($k) { return $k->getValue(); },
             $type->getKeyTypes()
         );
-        self::assertContains('type', $keys);
-        self::assertContains('required', $keys);
+        self::assertContains('enabled', $keys);
+        self::assertContains('limit', $keys);
     }
 
     public function testReturnTypeMethodNestedResolvesToConstantArrayType(): void
@@ -69,12 +69,11 @@ final class InferTypeNodeResolverExtensionTest extends PHPStanTestCase
             static function ($k) { return $k->getValue(); },
             $type->getKeyTypes()
         );
-        self::assertContains('schema', $keys);
+        self::assertContains('options', $keys);
         self::assertContains('version', $keys);
 
-        // The 'schema' value should itself be a ConstantArrayType
-        $schemaValueType = $type->getValueTypes()[array_search('schema', $keys, true)];
-        self::assertInstanceOf(ConstantArrayType::class, $schemaValueType);
+        $optionsValueType = $type->getValueTypes()[array_search('options', $keys, true)];
+        self::assertInstanceOf(ConstantArrayType::class, $optionsValueType);
     }
 
     public function testReturnTypeFunctionResolvesToConstantArrayType(): void
@@ -85,7 +84,7 @@ final class InferTypeNodeResolverExtensionTest extends PHPStanTestCase
         $typeNode = new GenericTypeNode(
             new IdentifierTypeNode('\\Amiut\\PHPStan\\TypeUtilities\\ReturnType'),
             [
-                new IdentifierTypeNode('Amiut\\PHPStan\\TypeUtilities\\Tests\\Fixtures\\sharedSchema'),
+                new IdentifierTypeNode('Amiut\\PHPStan\\TypeUtilities\\Tests\\Fixtures\\sharedOptions'),
             ]
         );
 

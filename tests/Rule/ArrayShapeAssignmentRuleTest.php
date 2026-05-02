@@ -28,7 +28,7 @@ final class ArrayShapeAssignmentRuleTest extends RuleTestCase
 
     public function testReportsAssignmentsThatViolateInferredShapeOffsets(): void
     {
-        $this->analyse([__DIR__ . '/../fixtures/AssignmentFixture.php'], [
+        $this->analyse([__DIR__ . '/../Fixtures/AssignmentFixture.php'], [
             [
                 "Assigned value type 'a' does not match inferred array shape offset type 1.",
                 29,

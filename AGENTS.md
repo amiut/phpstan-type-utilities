@@ -1,6 +1,8 @@
 # Agent Instructions — phpstan-type-utilities
 
-A PHPStan extension (type `phpstan-extension`) that provides **static type utilities** for PHP projects. It performs best-effort static inference on functions and methods returning plain `array`, suppresses `missingType.iterableValue` when the array type can be determined from `@return array @phpstan-infer-return`, emits custom `arrayTypeInference.*` errors when it cannot, and exposes `\Amiut\PHPStan\TypeUtilities\ReturnType<...>` so downstream PHPStan analysis can reuse inferred shapes. Only static arrays (no dynamic members) are handled — the extension intentionally avoids becoming a general type solver.
+A PHPStan extension (type `phpstan-extension`) that provides **static type utilities** for PHP projects, inspired by TypeScript utility types but implemented through PHPDoc/PHPStan extensions. Today it performs best-effort static inference on functions and methods returning plain `array`, suppresses `missingType.iterableValue` when the array type can be determined from `@return array @phpstan-infer-return`, emits custom `arrayTypeInference.*` errors when it cannot, and exposes `\Amiut\PHPStan\TypeUtilities\ReturnType<...>` so downstream PHPStan analysis can reuse inferred shapes.
+
+The current implementation is intentionally conservative. It infers static PHP array shapes from code; it does **not** treat arrays differently based on their contents or try to interpret domain-specific array structures. Any future domain-specific helpers must be implemented as explicit utilities rather than hidden behavior in array inference.
 
 ## Scope
 
@@ -8,6 +10,14 @@ A PHPStan extension (type `phpstan-extension`) that provides **static type utili
 | ---------------- | ----------------------------------------------------------- |
 | Return types     | `@return array @phpstan-infer-return`, inferred from static return expressions |
 | Referenced types | `\ReturnType<self, 'method'>`, `\ReturnType<Fully\Qualified\functionName>`, or the fully-qualified marker class form |
+
+## Project Goals
+
+- Build explicit PHPStan/PHPDoc type utilities that feel familiar to developers who use TypeScript utility types.
+- Keep each utility opt-in and easy to explain from the annotation syntax.
+- Prefer precise static inference when the source code is provably static.
+- Fail with custom diagnostics instead of silently widening to useful-looking but incorrect types.
+- Avoid semantic magic: array literals are inferred as PHP array shapes only, not interpreted as domain-specific languages.
 
 ## Behaviour Rules
 
@@ -57,7 +67,7 @@ tests/
   fixtures/
     InferFixture.php        # Fixture class/functions analyzed by resolver tests
   e2e/
-    SchemaBuilder.php       # End-to-end fixture: PHPStan max level, must produce no errors
+    ConfigBuilder.php       # End-to-end fixture: PHPStan max level, must produce no errors
   bootstrap.php
 extension.neon                          # Registers services and rules
 phpstan.neon                            # PHPStan config for e2e analysis (tests/e2e)

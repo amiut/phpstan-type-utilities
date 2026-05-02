@@ -7,9 +7,9 @@ namespace Amiut\PHPStan\TypeUtilities\Tests\E2E;
 /**
  * @return array @phpstan-infer-return
  */
-function sharedDefaults(): array
+function sharedFlags(): array
 {
     return [
-        'additionalProperties' => false,
+        'readonly' => false,
     ];
 }

@@ -7,7 +7,7 @@ namespace Amiut\PHPStan\TypeUtilities\Tests\Fixtures;
 /**
  * @return array @phpstan-infer-return
  */
-function sharedSchema(): array
+function sharedOptions(): array
 {
     return [
         'shared' => true,
@@ -15,19 +15,20 @@ function sharedSchema(): array
 }
 
 /**
- * @phpstan-type ProductSchema \Amiut\PHPStan\TypeUtilities\ReturnType<self, 'schema'>
- * @phpstan-type SharedSchema \Amiut\PHPStan\TypeUtilities\ReturnType<Amiut\PHPStan\TypeUtilities\Tests\Fixtures\sharedSchema>
+ * @phpstan-type OptionsShape \Amiut\PHPStan\TypeUtilities\ReturnType<self, 'options'>
+ * @phpstan-type SharedOptionsShape \Amiut\PHPStan\TypeUtilities\ReturnType<Amiut\PHPStan\TypeUtilities\Tests\Fixtures\sharedOptions>
  */
 final class InferFixture
 {
     /**
      * @return array @phpstan-infer-return
      */
-    public function schema(): array
+    public function options(): array
     {
         return [
-            'type' => 'object',
-            'required' => ['id', 'name'],
+            'enabled' => true,
+            'limit' => 100,
+            'labels' => ['default', 'featured'],
         ];
     }
 
@@ -37,28 +38,28 @@ final class InferFixture
     public function nested(): array
     {
         return [
-            'schema' => $this->schema(),
-            'shared' => sharedSchema(),
+            'options' => $this->options(),
+            'shared' => sharedOptions(),
             'version' => 1,
         ];
     }
 
     /**
-     * @param \Amiut\PHPStan\TypeUtilities\ReturnType<self, 'schema'> $data
+     * @param \Amiut\PHPStan\TypeUtilities\ReturnType<self, 'options'> $data
      */
-    public function processSchema(array $data): void
+    public function processOptions(array $data): void
     {
     }
 
     /**
-     * @param ProductSchema $data
+     * @param OptionsShape $data
      */
-    public function processSchemaAlias(array $data): void
+    public function processOptionsAlias(array $data): void
     {
     }
 
     /**
-     * @param SharedSchema $data
+     * @param SharedOptionsShape $data
      */
     public function processSharedAlias(array $data): void
     {

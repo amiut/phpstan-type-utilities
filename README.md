@@ -1,6 +1,6 @@
 # PHPStan Type Utilities
 
-PHPStan helpers for working with static array types — infer shapes automatically from return expressions and reuse them across your codebase without hand-writing `array{...}` annotations.
+PHPStan helpers for type-level utilities inspired by TypeScript utility types. The package currently focuses on static PHP arrays: infer shapes automatically from return expressions and reuse those shapes across your codebase without hand-writing `array{...}` annotations.
 
 Compatible with PHP 7.4+ and PHPStan 2.x.
 
@@ -16,6 +16,12 @@ Identifier: missingType.iterableValue
 For small arrays the fix is straightforward — add a `@return array{enabled: bool, limit: int}` annotation. For larger or deeply nested arrays this becomes impractical. The annotation can easily exceed the array it describes, and any structural change to the return value requires a manual update to keep the two in sync.
 
 The common workaround is to write a deliberately vague annotation such as `@return array<mixed>` or `@return array<string, mixed>`. This silences the error, but throws away all type information that PHPStan could otherwise use — defeating the purpose of running strict analysis in the first place.
+
+## Project Goals
+
+This package is meant to be a home for small, explicit PHPDoc/PHPStan type utilities. The current utilities are intentionally conservative: they read PHP code and PHPDoc, infer only what can be proven statically, and return clear diagnostics when they cannot.
+
+It does not interpret array contents semantically. Arrays are treated as PHP array literals only; any future domain-specific utility must be explicit and separate from return-shape inference.
 
 ## Features
 
@@ -34,10 +40,6 @@ public function options(): array
     ];
 }
 ```
-
-[Full documentation → docs/infer-return.md](docs/infer-return.md)
-
----
 
 ### `ReturnType<>` — Reuse inferred shapes
 
@@ -59,10 +61,6 @@ class Config
     public function apply(array $opts): void {}
 }
 ```
-
-[Full documentation → docs/return-type.md](docs/return-type.md)
-
----
 
 ## Installation
 

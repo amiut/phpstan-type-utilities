@@ -28,17 +28,17 @@ final class ArrayTypeInferencePhpDocRuleTest extends RuleTestCase
 
     public function testReportsFailedInferenceAndUnresolvedReturnTypes(): void
     {
-        $this->analyse([__DIR__ . '/../fixtures/PhpDocFailuresFixture.php'], [
+        $this->analyse([__DIR__ . '/../Fixtures/PhpDocFailuresFixture.php'], [
             [
                 'ReturnType<missingFunction> could not be resolved: Function \Amiut\PHPStan\TypeUtilities\Tests\Fixtures\missingFunction() was not found.',
                 11,
             ],
             [
-                'ReturnType<self, \'missingSchema\'> could not be resolved: Method Amiut\PHPStan\TypeUtilities\Tests\Fixtures\PhpDocFailuresFixture::missingSchema() was not found.',
+                'ReturnType<self, \'missingOptions\'> could not be resolved: Method Amiut\PHPStan\TypeUtilities\Tests\Fixtures\PhpDocFailuresFixture::missingOptions() was not found.',
                 11,
             ],
             [
-                'Method Amiut\PHPStan\TypeUtilities\Tests\Fixtures\PhpDocFailuresFixture::dynamicSchema() return type is marked @phpstan-infer-return, but the static array type could not be inferred: Method Amiut\PHPStan\TypeUtilities\Tests\Fixtures\PhpDocFailuresFixture::dynamicSchema() return type could not be inferred from static array expressions.',
+                'Method Amiut\PHPStan\TypeUtilities\Tests\Fixtures\PhpDocFailuresFixture::dynamicOptions() return type is marked @phpstan-infer-return, but the static array type could not be inferred: Method Amiut\PHPStan\TypeUtilities\Tests\Fixtures\PhpDocFailuresFixture::dynamicOptions() return type could not be inferred from static array expressions.',
                 16,
             ],
         ]);
