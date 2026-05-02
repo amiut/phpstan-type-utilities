@@ -1,11 +1,11 @@
 # PHPStan Type Utilities
 
 <p>
-<a href="https://github.com/amiut/phpstan-type-utilities/releases">
-<img alt="package version" src="https://img.shields.io/packagist/v/amiut/phpstan-type-utilities.svg?label=version" />
-</a>
+    <a href="https://github.com/amiut/phpstan-type-utilities/releases">
+        <img alt="package version" src="https://img.shields.io/packagist/v/amiut/phpstan-type-utilities.svg?label=version" />
+    </a>
     <img alt="php version" src="https://img.shields.io/packagist/php-v/amiut/phpstan-type-utilities.svg?color=brown" />
-    <img alt="Packagist" src="https://img.shields.io/packagist/l/amiut/phpstan-type-utilities.svg">
+    <img alt="Packagist" src="https://img.shields.io/github/license/amiut/phpstan-type-utilities">
 </p>
 
 PHPStan Type Utilities is a set of opt-in PHPStan/PHPDoc type utilities for PHP projects.
