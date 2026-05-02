@@ -1,0 +1,10 @@
+includes:
+    - ../extension.neon
+
+parameters:
+    level: max
+    treatPhpDocTypesAsCertain: false
+    parallel:
+        maximumNumberOfProcesses: 1
+    paths:
+        - Fixtures/ConsumerStyleStructureFixture.php

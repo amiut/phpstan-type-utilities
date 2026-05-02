@@ -2,6 +2,8 @@
 
 `ReturnType<callable>` is a PHPDoc utility type that resolves to the return type of a method or function. It is a general callable utility and does not require `@phpstan-infer-return`. If PHPStan can understand the callable's return type, `ReturnType<callable>` can reuse it.
 
+The utility is literal: it reuses the callable's PHP return type. It does not interpret domain-specific arrays. If a method returns a JSON-schema definition array, `\ReturnType<self, 'schema'>` resolves to the PHP array shape of the schema definition, not to the data type described by that schema.
+
 ## Syntax
 
 | Form                                                        | Resolves                                    |
@@ -65,12 +67,65 @@ final class Config
     /**
      * @param \ReturnType<self, 'options'> $opts
      */
-    public function apply(array $opts): void
+public function apply(array $opts): void
     {
         // PHPStan knows $opts['enabled'] is bool and $opts['limit'] is int
     }
 }
 ```
+
+Additional offsets are not treated as sealed today. Assignments to known inferred offsets are checked, but adding a new offset to an inferred shape is allowed unless PHPStan itself reports a separate error.
+
+```php
+/**
+ * @phpstan-type Defaults \ReturnType<self, 'defaults'>
+ */
+final class Config
+{
+    /** @return array @phpstan-infer-return */
+    public function defaults(): array
+    {
+        return ['schema_version' => 1, 'groups' => []];
+    }
+
+    /**
+     * @param array $data
+     * @phpstan-param Defaults $data
+     */
+    public function update(array $data): array
+    {
+        $data['schema_version'] = 'a'; // error: expected 1
+        $data['extra'] = false;        // allowed for now
+
+        return $data;
+    }
+}
+```
+
+## JSON schema arrays are not data shapes
+
+`ReturnType` does not convert schema-definition arrays into the data described by those schemas:
+
+```php
+/**
+ * @phpstan-type SchemaArray \ReturnType<self, 'schema'>
+ */
+final class Structure
+{
+    /** @return array @phpstan-infer-return */
+    public function schema(): array
+    {
+        return [
+            'type' => 'object',
+            'properties' => [
+                'schema_version' => ['type' => 'integer'],
+            ],
+        ];
+    }
+}
+```
+
+`SchemaArray` is the shape of the PHP array returned by `schema()`. It is not `array{schema_version: int}`. JSON-schema-to-data-shape conversion is a separate roadmap idea, not part of `ReturnType`.
 
 ## Defining a class-level alias
 
@@ -138,7 +193,7 @@ final class HttpClient
 
 ## IDE compatibility
 
-IDEs may show an error for `\ReturnType<...>` because they treat it as a class reference. Two options:
+PHPStan-powered IDE hovers should show the same resolved type as PHPStan CLI when the extension is active. Other language servers may show an error for `\ReturnType<...>` because they treat it as a class reference and do not execute PHPStan's custom type resolver. Two options:
 
 **Option 1** — Use the fully-qualified form that resolves to the real marker class:
 
@@ -146,7 +201,7 @@ IDEs may show an error for `\ReturnType<...>` because they treat it as a class r
 /** @param \Amiut\PHPStan\TypeUtilities\ReturnType<self, 'options'> $opts */
 ```
 
-The `ide/ReturnType.php` stub ships with the package for IDEs that perform class existence checks.
+The `ide/ReturnType.php` stub ships with the package for IDEs that perform class existence checks. It is only an editor-noise mitigation; PHPStan still resolves the real type through this extension.
 
 **Option 2** — Keep editor-facing tags as plain `array` and restrict `ReturnType` to PHPStan-only tags:
 

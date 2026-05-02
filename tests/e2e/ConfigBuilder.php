@@ -92,4 +92,9 @@ class ConfigBuilder
     {
         return $count;
     }
+
+    public function readSharedLabel(): string
+    {
+        return sharedLabel('ready');
+    }
 }

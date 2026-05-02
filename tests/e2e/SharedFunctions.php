@@ -13,3 +13,8 @@ function sharedFlags(): array
         'readonly' => false,
     ];
 }
+
+function sharedLabel(string $label): string
+{
+    return $label;
+}

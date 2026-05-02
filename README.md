@@ -26,8 +26,10 @@ The extension is registered automatically through Composer's PHPStan extension d
 
 ```neon
 includes:
-    - vendor/amiut/phpstan-type-utilities/extension.neon
+    - %currentWorkingDirectory%/vendor/amiut/phpstan-type-utilities/extension.neon
 ```
+
+Use `%currentWorkingDirectory%` for manual includes. A plain relative include can break when another tool wraps your PHPStan config from a generated temporary config file, which can make PHPStan behave as if the extension is not installed.
 
 ## Features
 
@@ -138,6 +140,8 @@ Here `Options` resolves to the same inferred type as `options()`:
 array{enabled: bool, limit: int}
 ```
 
+`ReturnType` always reuses the callable's literal PHP return type. For example, if a method returns a JSON-schema definition array, `\ReturnType<self, 'schema'>` resolves to the PHP shape of that schema-definition array. It does not convert the JSON schema into a separate data shape. Point `ReturnType` at the callable that returns the data shape you want, such as a `default()` method, when you need to validate assignments to that data.
+
 For functions, pass the function name:
 
 ```php
@@ -163,6 +167,8 @@ function defaultOptions(): array
 - `\ReturnType<Fully\Qualified\ClassName, 'methodName'>`
 
 Nested inferred calls are supported when the target is statically resolvable.
+
+PHPStan-powered IDE hovers should show the same resolved types PHPStan sees on the command line when the extension is active. The optional IDE stubs only reduce editor noise in tools like Intelephense or PHPStorm; those tools do not execute PHPStan's custom type resolver by themselves.
 
 [Read the `ReturnType<callable>` docs](docs/return-type.md)
 

@@ -21,6 +21,7 @@ use PHPStan\Reflection\InitializerExprTypeResolver;
 use PHPStan\Reflection\ReflectionProvider;
 use PHPStan\Type\Constant\ConstantArrayType;
 use PHPStan\Type\Constant\ConstantIntegerType;
+use PHPStan\Type\GeneralizePrecision;
 use PHPStan\Type\MixedType;
 use PHPStan\Type\Type;
 use PHPStan\Type\TypeCombinator;
@@ -147,7 +148,7 @@ final class ArrayReturnTypeInferer
                 return ArrayReturnTypeInferenceResult::failure(sprintf('Function %s() was not found.', $functionName));
             }
 
-            $context = InitializerExprContext::fromFunction($functionName, $fileName);
+            $context = InitializerExprContext::fromFunction(ltrim($functionName, '\\'), $fileName);
             $result = $this->inferFromFunction($function, $functionName, $context, $allowInferReturnDoc);
 
             if ($result->getType() !== null) {
@@ -175,7 +176,7 @@ final class ArrayReturnTypeInferer
                 return ArrayReturnTypeInferenceResult::failure(sprintf('Function %s() was not found in %s.', $functionName, $fileName));
             }
 
-            $context = InitializerExprContext::fromFunction($functionName, $fileName);
+            $context = InitializerExprContext::fromFunction(ltrim($functionName, '\\'), $fileName);
             $result = $this->inferFromFunction($function, $functionName, $context, $allowInferReturnDoc);
 
             if ($result->getType() !== null) {
@@ -342,7 +343,7 @@ final class ArrayReturnTypeInferer
                 }
 
                 $keyTypes[] = $keyType;
-                $valueTypes[] = $valueType;
+                $valueTypes[] = $this->widenValueType($valueType);
             }
 
             return new ConstantArrayType($keyTypes, $valueTypes);
@@ -355,6 +356,15 @@ final class ArrayReturnTypeInferer
         }
 
         return $type;
+    }
+
+    private function widenValueType(Type $type): Type
+    {
+        if ($type->getConstantArrays() !== []) {
+            return $type;
+        }
+
+        return $type->generalize(GeneralizePrecision::lessSpecific());
     }
 
     private function resolveStaticCallClass(Name $name, string $className): string

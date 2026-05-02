@@ -22,7 +22,7 @@ public function options(): array
 
 PHPStan will infer `array{enabled: true, limit: 100, label: 'default'}` and suppress the `missingType.iterableValue` error that is raised at level 6 and above.
 
-The tag is invisible to IDEs — editors only see `@return array` and will not show spurious type errors.
+The tag is invisible to non-PHPStan language servers — editors only see `@return array` and will not show spurious type errors. PHPStan-powered IDE hovers can still show the precise inferred shape because PHPStan resolves the tag during analysis.
 
 ## Functions
 
