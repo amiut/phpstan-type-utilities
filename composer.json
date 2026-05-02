@@ -1,0 +1,37 @@
+{
+  "name": "amiut/phpstan-type-utilities",
+  "description": "PHPStan type utilities for inferring and reusing static array shapes from PHPDoc.",
+  "type": "phpstan-extension",
+  "license": "MIT",
+  "autoload": {
+    "psr-4": {
+      "Amiut\\PHPStan\\TypeUtilities\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Amiut\\PHPStan\\TypeUtilities\\Tests\\": "tests/"
+    }
+  },
+  "require": {
+    "php": "^7.4 || ^8.0",
+    "phpstan/phpstan": "^2.1.7"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^9.0 || ^10.5 || ^11.0"
+  },
+  "scripts": {
+    "test": "phpunit",
+    "phpstan": "phpstan analyse"
+  },
+  "extra": {
+    "phpstan": {
+      "includes": [
+        "extension.neon"
+      ]
+    }
+  },
+  "config": {
+    "sort-packages": true
+  }
+}

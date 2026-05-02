@@ -1,0 +1,11 @@
+includes:
+    - extension.neon
+
+parameters:
+    level: max
+    paths:
+        - tests/e2e
+    bootstrapFiles:
+        - tests/e2e/SharedFunctions.php
+    scanFiles:
+        - tests/e2e/SharedFunctions.php

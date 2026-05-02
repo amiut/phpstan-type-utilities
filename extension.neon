@@ -1,0 +1,36 @@
+services:
+    -
+        class: Amiut\PHPStan\TypeUtilities\ArrayTypeInferenceHelper
+
+    -
+        class: Amiut\PHPStan\TypeUtilities\InferredReturnTypeCache
+
+    -
+        class: Amiut\PHPStan\TypeUtilities\ArrayReturnTypeInferer
+        arguments:
+            parser: @defaultAnalysisParser
+
+    -
+        class: Amiut\PHPStan\TypeUtilities\InferTypeNodeResolverExtension
+        tags:
+            - phpstan.phpDoc.typeNodeResolverExtension
+
+    -
+        class: Amiut\PHPStan\TypeUtilities\ArrayTypeInferenceIgnoreExtension
+        tags:
+            - phpstan.ignoreErrorExtension
+
+    -
+        class: Amiut\PHPStan\TypeUtilities\ArrayTypeInferenceCallSiteExtension
+        tags:
+            - phpstan.broker.expressionTypeResolverExtension
+
+    -
+        class: Amiut\PHPStan\TypeUtilities\ArrayTypeInferencePhpDocRule
+        tags:
+            - phpstan.rules.rule
+
+    -
+        class: Amiut\PHPStan\TypeUtilities\ArrayShapeAssignmentRule
+        tags:
+            - phpstan.rules.rule
