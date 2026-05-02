@@ -14,6 +14,26 @@ function sharedOptions(): array
     ];
 }
 
+function sharedLimit(): int
+{
+    return 100;
+}
+
+/**
+ * @return array{enabled: bool, limit: int}
+ */
+function documentedOptions(): array
+{
+    return [
+        'enabled' => true,
+        'limit' => 100,
+    ];
+}
+
+final class InferValue
+{
+}
+
 /**
  * @phpstan-type OptionsShape \Amiut\PHPStan\TypeUtilities\ReturnType<self, 'options'>
  * @phpstan-type SharedOptionsShape \Amiut\PHPStan\TypeUtilities\ReturnType<Amiut\PHPStan\TypeUtilities\Tests\Fixtures\sharedOptions>
@@ -63,5 +83,26 @@ final class InferFixture
      */
     public function processSharedAlias(array $data): void
     {
+    }
+
+    public function count(): int
+    {
+        return 5;
+    }
+
+    public function value(): InferValue
+    {
+        return new InferValue();
+    }
+
+    /**
+     * @return array{name: string, count: int}
+     */
+    public function documentedShape(): array
+    {
+        return [
+            'name' => 'default',
+            'count' => 5,
+        ];
     }
 }

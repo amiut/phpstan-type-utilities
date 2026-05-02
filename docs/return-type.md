@@ -1,6 +1,6 @@
-# `ReturnType<>` — Reuse Inferred Shapes
+# `ReturnType<callable>` — Reuse Callable Return Types
 
-`ReturnType<>` is a PHPDoc utility type that resolves to the inferred shape of any method or function annotated with `@phpstan-infer-return`. Use it to share a type between multiple callables without duplicating annotations.
+`ReturnType<callable>` is a PHPDoc utility type that resolves to the return type of a method or function. It is a general callable utility and does not require `@phpstan-infer-return`. If PHPStan can understand the callable's return type, `ReturnType<callable>` can reuse it.
 
 ## Syntax
 
@@ -12,6 +12,43 @@
 | `\Amiut\PHPStan\TypeUtilities\ReturnType<self, 'method'>`  | Same as above — IDE-friendly fully qualified |
 
 ## Basic example
+
+```php
+final class Counter
+{
+    public function count(): int
+    {
+        return 5;
+    }
+
+    /** @phpstan-param \ReturnType<self, 'count'> $count */
+    public function setCount(int $count): void {}
+}
+```
+
+`\ReturnType<self, 'count'>` resolves to `int`.
+
+## PHPDoc return type example
+
+```php
+final class Config
+{
+    /** @return array{enabled: bool, limit: int} */
+    public function options(): array
+    {
+        return ['enabled' => true, 'limit' => 100];
+    }
+
+    /** @phpstan-param \ReturnType<self, 'options'> $options */
+    public function apply(array $options): void {}
+}
+```
+
+`\ReturnType<self, 'options'>` resolves to `array{enabled: bool, limit: int}`.
+
+## With inferred arrays
+
+`@phpstan-infer-return` is a separate utility. When a callable uses it, the callable's return type becomes a precise static array shape, and `ReturnType<callable>` can reuse that type like any other return type.
 
 ```php
 final class Config
@@ -123,4 +160,4 @@ public function apply(array $opts): void {}
 
 ## Error reporting
 
-If the target callable does not exist or was not annotated with `@phpstan-infer-return`, PHPStan reports `arrayTypeInference.returnTypeUnresolved` at the point where `ReturnType<>` is used.
+If the target callable does not exist, PHPStan reports `arrayTypeInference.returnTypeUnresolved` at the point where `ReturnType<>` is used. If the callable is marked with `@phpstan-infer-return` but its static array shape cannot be inferred, PHPStan reports the same identifier with the inference failure reason.

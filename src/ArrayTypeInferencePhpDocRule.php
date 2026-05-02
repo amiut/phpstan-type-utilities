@@ -37,9 +37,15 @@ final class ArrayTypeInferencePhpDocRule implements Rule
      */
     private $inferer;
 
-    public function __construct(ArrayReturnTypeInferer $inferer)
+    /**
+     * @var CallableReturnTypeResolver
+     */
+    private $callableReturnTypeResolver;
+
+    public function __construct(ArrayReturnTypeInferer $inferer, CallableReturnTypeResolver $callableReturnTypeResolver)
     {
         $this->inferer = $inferer;
+        $this->callableReturnTypeResolver = $callableReturnTypeResolver;
     }
 
     public function getNodeType(): string
@@ -150,10 +156,12 @@ final class ArrayTypeInferencePhpDocRule implements Rule
 
         foreach ($matches[1] as $rawArgs) {
             $args = array_map('trim', explode(',', $rawArgs));
+            $returnType = null;
 
             if (count($args) === 1) {
                 $functionName = $this->qualifyName($this->unquote($args[0]), $namespace);
                 $result = $this->inferer->inferFunction($functionName, false);
+                $returnType = $this->callableReturnTypeResolver->resolveFunctionReturnType($functionName);
             } elseif (count($args) === 2) {
                 $targetClass = $this->resolveClassName($this->unquote($args[0]), $namespace, $className);
                 $methodName = $this->unquote($args[1]);
@@ -162,12 +170,13 @@ final class ArrayTypeInferencePhpDocRule implements Rule
                     $result = ArrayReturnTypeInferenceResult::failure(sprintf('Class %s could not be resolved.', $args[0]));
                 } else {
                     $result = $this->inferer->inferMethod($targetClass, $methodName, false);
+                    $returnType = $this->callableReturnTypeResolver->resolveMethodReturnType($targetClass, $methodName);
                 }
             } else {
                 $result = ArrayReturnTypeInferenceResult::failure('ReturnType expects one function argument or two method arguments.');
             }
 
-            if ($result->getType() !== null) {
+            if ($returnType !== null) {
                 continue;
             }
 

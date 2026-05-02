@@ -19,16 +19,16 @@ use function substr;
 use function strtolower;
 use function trim;
 
-final class InferTypeNodeResolverExtension implements TypeNodeResolverExtension
+final class ReturnTypeNodeResolverExtension implements TypeNodeResolverExtension
 {
     /**
-     * @var ArrayReturnTypeInferer
+     * @var CallableReturnTypeResolver
      */
-    private $inferer;
+    private $callableReturnTypeResolver;
 
-    public function __construct(ArrayReturnTypeInferer $inferer)
+    public function __construct(CallableReturnTypeResolver $callableReturnTypeResolver)
     {
-        $this->inferer = $inferer;
+        $this->callableReturnTypeResolver = $callableReturnTypeResolver;
     }
 
     public function resolve(TypeNode $typeNode, NameScope $nameScope): ?Type
@@ -55,7 +55,8 @@ final class InferTypeNodeResolverExtension implements TypeNodeResolverExtension
                 return new ErrorType();
             }
 
-            $type = $this->inferer->inferFunction($this->resolveFunctionName($functionName, $nameScope), false)->getType();
+            $functionName = $this->resolveFunctionName($functionName, $nameScope);
+            $type = $this->callableReturnTypeResolver->resolveFunctionReturnType($functionName);
 
             return $type ?? new ErrorType();
         }
@@ -80,7 +81,7 @@ final class InferTypeNodeResolverExtension implements TypeNodeResolverExtension
             return new ErrorType();
         }
 
-        $type = $this->inferer->inferMethod($className, $methodName, false)->getType();
+        $type = $this->callableReturnTypeResolver->resolveMethodReturnType($className, $methodName);
 
         return $type ?? new ErrorType();
     }

@@ -405,7 +405,7 @@ private function isMyTypeName(string $name): bool
 ```
 
 The global `\` prefix on the type name is necessary: PHPStan resolves phpDoc
-type names using the namespace context of the file being analysed. Prefixing
+type names using the namespace context of the file being analyzed. Prefixing
 with `\` forces the global namespace and prevents collisions with class names
 in the same namespace.
 

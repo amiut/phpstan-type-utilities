@@ -1,33 +1,39 @@
 # PHPStan Type Utilities
 
-PHPStan helpers for type-level utilities inspired by TypeScript utility types. The package currently focuses on static PHP arrays: infer shapes automatically from return expressions and reuse those shapes across your codebase without hand-writing `array{...}` annotations.
+<p>
+<a href="https://github.com/amiut/phpstan-type-utilities/releases">
+<img alt="package version" src="https://img.shields.io/packagist/v/amiut/phpstan-type-utilities.svg?label=version" />
+</a>
+    <img alt="php version" src="https://img.shields.io/packagist/php-v/amiut/phpstan-type-utilities.svg?color=brown" />
+    <img alt="Packagist" src="https://img.shields.io/packagist/l/amiut/phpstan-type-utilities.svg">
+</p>
 
-Compatible with PHP 7.4+ and PHPStan 2.x.
+PHPStan Type Utilities is a set of opt-in PHPStan/PHPDoc type utilities for PHP projects.
 
-## The Problem
+The package currently includes utilities for detecting callable return types and inferring static PHP array shapes. The goal is to bring a small, explicit, TypeScript-utility-types style workflow to PHPStan without turning the extension into a general type solver.
 
-Running PHPStan at level 6 or above requires explicit value types on all iterables. For functions and methods that return a fully static array the shape is unambiguous, yet PHPStan still raises:
+The implementation is intentionally conservative. It infers PHP array literals as PHP array shapes only; it does not interpret arrays semantically or treat domain-specific array structures differently.
 
-```text
-Return type has no value type specified in iterable type array.
-Identifier: missingType.iterableValue
+## Installation
+
+Install the package as a development dependency:
+
+```bash
+composer require --dev amiut/phpstan-type-utilities
 ```
 
-For small arrays the fix is straightforward — add a `@return array{enabled: bool, limit: int}` annotation. For larger or deeply nested arrays this becomes impractical. The annotation can easily exceed the array it describes, and any structural change to the return value requires a manual update to keep the two in sync.
+The extension is registered automatically through Composer's PHPStan extension discovery. If your project does not use extension discovery, include it manually:
 
-The common workaround is to write a deliberately vague annotation such as `@return array<mixed>` or `@return array<string, mixed>`. This silences the error, but throws away all type information that PHPStan could otherwise use — defeating the purpose of running strict analysis in the first place.
-
-## Project Goals
-
-This package is meant to be a home for small, explicit PHPDoc/PHPStan type utilities. The current utilities are intentionally conservative: they read PHP code and PHPDoc, infer only what can be proven statically, and return clear diagnostics when they cannot.
-
-It does not interpret array contents semantically. Arrays are treated as PHP array literals only; any future domain-specific utility must be explicit and separate from return-shape inference.
+```neon
+includes:
+    - vendor/amiut/phpstan-type-utilities/extension.neon
+```
 
 ## Features
 
-### `@phpstan-infer-return` — Automatic shape inference
+### `@phpstan-infer-return`
 
-Add `@phpstan-infer-return` alongside `@return array` to let PHPStan infer the exact shape from the return expression. No `array{...}` annotation needed.
+Infer the exact static array shape of a function or method from its return expression.
 
 ```php
 /** @return array @phpstan-infer-return */
@@ -35,46 +41,130 @@ public function options(): array
 {
     return [
         'enabled' => true,
-        'limit'   => 100,
-        'label'   => 'default',
+        'limit' => 100,
+        'label' => 'default',
     ];
 }
 ```
 
-### `ReturnType<>` — Reuse inferred shapes
+PHPStan receives the inferred return type:
 
-Reference the inferred shape of any annotated method or function as a PHPDoc type, without repeating the annotation.
+```php
+array{enabled: bool, limit: int, label: string}
+```
+
+This suppresses PHPStan's generic missing iterable value type error when the shape can be inferred. If inference fails, the extension reports a focused `arrayTypeInference.missingType` diagnostic.
+
+[Read the `@phpstan-infer-return` docs](docs/infer-return.md)
+
+### `ReturnType<callable>`
+
+Detect and reuse the return type of a function or method as a PHPDoc type. `ReturnType<callable>` is a general callable utility; it works with any callable return type PHPStan can resolve. That type may come from a native declaration, PHPDoc, another PHPStan extension, or `@phpstan-infer-return`.
+
+Regular return types work without `@phpstan-infer-return`:
+
+```php
+final class Counter
+{
+    public function count(): int
+    {
+        return 5;
+    }
+
+    /** @phpstan-param \ReturnType<self, 'count'> $count */
+    public function setCount(int $count): void
+    {
+    }
+}
+```
+
+Here `\ReturnType<self, 'count'>` resolves to:
+
+```php
+int
+```
+
+PHPDoc return types work too:
+
+```php
+final class Config
+{
+    /** @return array{enabled: bool, limit: int} */
+    public function options(): array
+    {
+        return [
+            'enabled' => true,
+            'limit' => 100,
+        ];
+    }
+
+    /** @phpstan-param \ReturnType<self, 'options'> $options */
+    public function apply(array $options): void
+    {
+    }
+}
+```
+
+It can also reuse an inferred array shape because `@phpstan-infer-return` makes the callable's return type more precise:
 
 ```php
 /**
  * @phpstan-type Options \ReturnType<self, 'options'>
  */
-class Config
+final class Config
 {
     /** @return array @phpstan-infer-return */
     public function options(): array
     {
-        return ['enabled' => true, 'limit' => 100];
+        return [
+            'enabled' => true,
+            'limit' => 100,
+        ];
     }
 
-    /** @phpstan-param Options $opts */
-    public function apply(array $opts): void {}
+    /**
+     * @param array $options
+     * @phpstan-param Options $options
+     */
+    public function apply(array $options): void
+    {
+    }
 }
 ```
 
-## Installation
+Here `Options` resolves to the same inferred type as `options()`:
 
-```bash
-composer require --dev amiut/phpstan-type-utilities
+```php
+array{enabled: bool, limit: int}
 ```
 
-Then include the extension in your PHPStan configuration:
+For functions, pass the function name:
 
-```neon
-# phpstan.neon
-includes:
-    - vendor/amiut/phpstan-type-utilities/extension.neon
+```php
+/**
+ * @return array @phpstan-infer-return
+ */
+function defaultOptions(): array
+{
+    return [
+        'enabled' => true,
+        'limit' => 100,
+    ];
+}
+
+/** @phpstan-type Options \ReturnType<defaultOptions> */
 ```
+
+`ReturnType<callable>` supports:
+
+- `\ReturnType<functionName>`
+- `\ReturnType<Fully\Qualified\functionName>`
+- `\ReturnType<self, 'methodName'>`
+- `\ReturnType<Fully\Qualified\ClassName, 'methodName'>`
+
+Nested inferred calls are supported when the target is statically resolvable.
+
+[Read the `ReturnType<callable>` docs](docs/return-type.md)
 
 ## License
 

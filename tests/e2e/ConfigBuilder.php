@@ -79,4 +79,17 @@ class ConfigBuilder
     {
         return $flags['readonly'];
     }
+
+    public function count(): int
+    {
+        return 5;
+    }
+
+    /**
+     * @phpstan-param \ReturnType<self, 'count'> $count
+     */
+    public function readCount(int $count): int
+    {
+        return $count;
+    }
 }

@@ -1,6 +1,6 @@
 # Agent Instructions — phpstan-type-utilities
 
-A PHPStan extension (type `phpstan-extension`) that provides **static type utilities** for PHP projects, inspired by TypeScript utility types but implemented through PHPDoc/PHPStan extensions. Today it performs best-effort static inference on functions and methods returning plain `array`, suppresses `missingType.iterableValue` when the array type can be determined from `@return array @phpstan-infer-return`, emits custom `arrayTypeInference.*` errors when it cannot, and exposes `\Amiut\PHPStan\TypeUtilities\ReturnType<...>` so downstream PHPStan analysis can reuse inferred shapes.
+A PHPStan extension (type `phpstan-extension`) that provides **static type utilities** for PHP projects, inspired by TypeScript utility types but implemented through PHPDoc/PHPStan extensions. Today it exposes `\ReturnType<callable>` for reusing any callable return type PHPStan can resolve, and provides best-effort static inference for functions and methods returning plain `array` through `@return array @phpstan-infer-return`.
 
 The current implementation is intentionally conservative. It infers static PHP array shapes from code; it does **not** treat arrays differently based on their contents or try to interpret domain-specific array structures. Any future domain-specific helpers must be implemented as explicit utilities rather than hidden behavior in array inference.
 
@@ -8,23 +8,24 @@ The current implementation is intentionally conservative. It infers static PHP a
 
 | Context          | Inference strategy                                          |
 | ---------------- | ----------------------------------------------------------- |
-| Return types     | `@return array @phpstan-infer-return`, inferred from static return expressions |
-| Referenced types | `\ReturnType<self, 'method'>`, `\ReturnType<Fully\Qualified\functionName>`, or the fully-qualified marker class form |
+| Callable returns | `\ReturnType<self, 'method'>`, `\ReturnType<Fully\Qualified\functionName>`, or the fully-qualified marker class form |
+| Inferred arrays  | `@return array @phpstan-infer-return`, inferred from static return expressions |
 
 ## Project Goals
 
 - Build explicit PHPStan/PHPDoc type utilities that feel familiar to developers who use TypeScript utility types.
 - Keep each utility opt-in and easy to explain from the annotation syntax.
+- Keep `ReturnType<callable>` independent from inferred arrays: it asks for a callable's return type, whatever mechanism provides that type: native declarations, PHPDoc, PHPStan extensions, or `@phpstan-infer-return`.
 - Prefer precise static inference when the source code is provably static.
 - Fail with custom diagnostics instead of silently widening to useful-looking but incorrect types.
 - Avoid semantic magic: array literals are inferred as PHP array shapes only, not interpreted as domain-specific languages.
 
-## Behaviour Rules
+## Behavior Rules
 
-- **`@return array @phpstan-infer-return`** → only supported marker for the annotated callable's own static array shape.
-- **`\ReturnType<Fully\Qualified\functionName>`** → resolves an inferred function return shape.
-- **`\ReturnType<Class, 'method'>`** → resolves an inferred method return shape.
+- **`\ReturnType<Fully\Qualified\functionName>`** → resolves a function return type.
+- **`\ReturnType<Class, 'method'>`** → resolves a method return type.
 - **`\Amiut\PHPStan\TypeUtilities\ReturnType<...>`** → fully-qualified marker form also resolves for IDEs that prefer a known class name.
+- **`@return array @phpstan-infer-return`** → marker for inferring the annotated callable's own static array shape.
 - **IDE-facing parameter/return docs** → use regular `@param array` / `@return array` plus PHPStan-specific `@phpstan-param ReturnTypeAlias` / `@phpstan-return ReturnTypeAlias` so editors do not treat `ReturnType<...>` as a native array replacement.
 - **Inference succeeds** → `missingType.iterableValue` is suppressed; no custom error is emitted; inferred type is stored in the call-site cache.
 - **Inference fails** → `missingType.iterableValue` is suppressed and `arrayTypeInference.missingType` or `arrayTypeInference.returnTypeUnresolved` is reported instead.
@@ -38,6 +39,7 @@ Function/method `missingType.iterableValue` errors are reported by PHPStan on wr
 | PHPStan API                       | Used for                                                                        |
 | --------------------------------- | ------------------------------------------------------------------------------- |
 | `TypeNodeResolverExtension`       | Resolves `\ReturnType<...>` PHPDoc utilities and the fully-qualified marker form |
+| `CallableReturnTypeResolver`      | Resolves callable return types via PHPStan reflection or inferred-array precision |
 | `IgnoreErrorExtension`            | Suppresses built-in iterable/unresolvable errors for inferred return markers    |
 | `Rule<FileNode>`                  | Reports custom errors for failed infer-return / `ReturnType` usage              |
 | `Rule<Assign>`                    | Reports writes that violate inferred array-shape offset types                   |
@@ -46,7 +48,7 @@ Function/method `missingType.iterableValue` errors are reported by PHPStan on wr
 
 ## Call-Site Type Propagation
 
-`ArrayReturnTypeInferer` parses the target callable's source file on demand, evaluates static array return expressions, resolves nested `$this->method()`, `self::method()`, `static::method()`, and direct function calls annotated with `@return array @phpstan-infer-return`, and stores successful types in `InferredReturnTypeCache`.
+`ReturnType<callable>` resolves through `CallableReturnTypeResolver`, which first asks for any more precise inferred-array return type and otherwise falls back to PHPStan's reflected callable return type. `ArrayReturnTypeInferer` is separate: it parses callables marked with `@return array @phpstan-infer-return`, evaluates static array return expressions, resolves nested inferred calls, and stores successful types in `InferredReturnTypeCache`.
 
 ## Project Structure
 
@@ -56,7 +58,8 @@ src/
   ArrayReturnTypeInferenceResult.php   # Success/failure value object
   ArrayTypeInferenceHelper.php         # Shared type usefulness checks
   InferredReturnTypeCache.php           # Shared mutable cache: ClassName::methodName → Type
-  InferTypeNodeResolverExtension.php    # Resolves ReturnType PHPDoc utility
+  CallableReturnTypeResolver.php        # Resolves callable return types for ReturnType
+  ReturnTypeNodeResolverExtension.php    # Resolves ReturnType PHPDoc utility
   ArrayTypeInferenceIgnoreExtension.php # Suppresses replaced built-in PHPStan errors
   ArrayTypeInferencePhpDocRule.php      # Reports custom inference failures
   ArrayShapeAssignmentRule.php          # Reports inferred shape assignment mismatches
