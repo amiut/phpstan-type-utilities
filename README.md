@@ -1,5 +1,8 @@
 # PHPStan Type Utilities
 
+> [!WARNING]
+> This project is experimental and not stable. APIs may change without notice.
+
 <p>
     <a href="https://github.com/amiut/phpstan-type-utilities/releases">
         <img alt="package version" src="https://img.shields.io/packagist/v/amiut/phpstan-type-utilities.svg?label=version" />
